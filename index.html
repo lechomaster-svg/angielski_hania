@@ -45,6 +45,7 @@ h1{font-family:var(--display);font-weight:600;font-size:1.6rem;margin:0;text-wra
 .bar>span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .pic{font-size:4.2rem;line-height:1;margin:0}
 .fix{display:flex;flex-direction:column;align-items:center;gap:8px}
+.fixtxt{margin:0;font-family:var(--display);font-weight:600;font-size:1.6rem;color:var(--ok);overflow-wrap:anywhere}
 .fixlab{font-weight:700;color:var(--muted)}
 .t.sm{width:34px;height:42px;font-size:1.25rem;border-style:solid}
 .t.hl{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
@@ -154,7 +155,7 @@ summary{cursor:pointer;font-weight:700}
     <p class="hint">Słówka i wyniki zapisują się automatycznie.</p>
   </details>
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 11:05<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 11:10<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -221,7 +222,7 @@ $("word").addEventListener("keydown",e=>{const t=e.target;if(t.tagName!=="INPUT"
   if(e.key==="Enter"){e.preventDefault();check()}});
 
 function record(ok){const R=S.round;if(ok)R.good++;else{R.bad++;if(!R.wrong.includes(cur[0]))R.wrong.push(cur[0])}save();renderScore()}
-function showFix(){const f=$("fix");f.innerHTML="";const lab=document.createElement("span");lab.className="fixlab";lab.textContent="Poprawnie:";f.appendChild(lab);
+function showFix(){const f=$("fix");f.innerHTML="";const tx=document.createElement("p");tx.className="fixtxt";tx.textContent=cur[0];f.appendChild(tx);const lab=document.createElement("span");lab.className="fixlab";lab.textContent="Poprawnie:";f.appendChild(lab);
   const box=document.createElement("div");box.className="word";let part=null;
   [...cur[0]].forEach((c,i)=>{if(c===" "||!part){part=document.createElement("div");part.className="part";box.appendChild(part);if(c===" ")return}
     const d=document.createElement("div");d.className="t sm"+(hidden.includes(i)?" hl":"");d.textContent=c;part.appendChild(d)});
