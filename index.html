@@ -185,7 +185,7 @@ summary{cursor:pointer;font-weight:700}
   </details>
 
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:40<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 16:20<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -230,7 +230,7 @@ function nextWord(){const R=S.round;checked=false;
 function buildWord(){checked=false;$("summary").hidden=true;$("card").hidden=false;$("msg").textContent="";$("msg").className="msg";$("fix").hidden=true;
   const w=$("word");w.innerHTML="";renderScore();
   if(!cur){$("pl").textContent="Dodaj słówka do listy poniżej.";$("pic").textContent="";return}
-  $("checkBtn").hidden=false;$("checkBtn").textContent="Sprawdź";$("nextBtn").hidden=false;
+  $("checkBtn").hidden=false;$("checkBtn").textContent="Sprawdź";$("nextBtn").hidden=false;$("sayBtn").hidden=S.mode!=="dict";
   if(cur[3]){buildSentence();return}
   showHint();
   if(S.mode==="choice"){buildChoice();return}
@@ -272,7 +272,7 @@ function buildDict(){hidden=[];[...cur[0]].forEach((c,i)=>{if(/[a-z]/i.test(c))h
   inp.setAttribute("autocapitalize","off");inp.setAttribute("autocorrect","off");inp.setAttribute("aria-label","Wpisz słowo");$("word").appendChild(inp);
   setTimeout(()=>{inp.focus({preventScroll:true});say()},150)}
 function norm(t){return String(t).toLowerCase().replace(/\s+/g," ").trim()}
-function finish(ok){record(ok);if(cur[3]&&$("gap")){$("gap").textContent=cur[3].a;$("gap").className="gap ok"}else if(S.mode==="dict")showHint();
+function finish(ok){record(ok);$("sayBtn").hidden=false;if(cur[3]&&$("gap")){$("gap").textContent=cur[3].a;$("gap").className="gap ok"}else if(S.mode==="dict")showHint();
   const m=$("msg");m.className="msg "+(ok?"ok":"bad")+" pop";
   m.textContent=ok?"Brawo, "+(S.name||"")+"!":"Prawie! Zobacz poprawną odpowiedź:";
   if(!ok)showFix();
@@ -299,7 +299,7 @@ function check(){if(!cur)return;if(checked){nextWord();return}
   const word=cur[0];let ok=true;
   a.forEach(x=>{const r=x.value===word[+x.dataset.i].toLowerCase();x.classList.add(r?"ok":"bad");x.readOnly=true;if(!r)ok=false});
   checked=true;finish(ok)}
-function skip(){if(!cur||checked)return;checked=true;record(false);
+function skip(){if(!cur||checked)return;checked=true;record(false);$("sayBtn").hidden=false;
   inputs().forEach(x=>{x.readOnly=true;x.classList.add("bad")});
   document.querySelectorAll("#word .choice").forEach(x=>{x.disabled=true;if(x.textContent===ans())x.classList.add("ok")});
   if(cur[3]&&$("gap")){$("gap").textContent=cur[3].a;$("gap").className="gap ok"}
@@ -378,7 +378,7 @@ if(RANK.url){$("rankBox").hidden=false;$("rankBox").addEventListener("toggle",()
   document.querySelectorAll("#rankTabs button").forEach(b=>b.onclick=()=>loadRank(b.dataset.rm));$("rankSend").onclick=sendRank}
 function renderAll(){renderModes();renderScore();renderLevels();renderList()}
 
-$("checkBtn").onclick=check;$("nextBtn").onclick=skip;$("sayBtn").onclick=()=>cur&&say();
+$("checkBtn").onclick=check;$("nextBtn").onclick=skip;$("sayBtn").onclick=()=>{if(cur&&(checked||S.mode==="dict"))say()};
 document.querySelectorAll(".levels button").forEach(b=>b.onclick=()=>{S.lv=+b.dataset.lv;save();renderLevels();if(cur&&!checked)buildWord()});
 
 function showName(){const has=!!S.name;$("nameBox").hidden=has;$("game").hidden=!has;$("whoBtn").hidden=!has;if(has)$("whoBtn").textContent="👤 "+S.name+" · zmień";if(!has){$("nameIn").value="";setTimeout(()=>$("nameIn").focus(),50)}}
