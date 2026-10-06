@@ -366,10 +366,10 @@ function renderModes(){if(!["letters","choice","dict","sent"].includes(S.mode))S
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===S.mode)));$("levels").hidden=S.mode!=="letters"}
 document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>{const was=!!(S.round&&S.round.kind==="sent");S.mode=b.dataset.mode;save();renderModes();if(was!==(S.mode==="sent"))freshRound();else if(cur&&!checked)buildWord()});
 /* ---- shared online ranking (Supabase) ---- */
-const RANK={url:"",key:""};
+const RANK={url:"https://gmrkbgttpmyutjetotqb.supabase.co",key:"sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc"};
 const RM_LABEL={letters:"Literki",choice:"Wybierz",dict:"Dyktando",sent:"Zdania"};
 let rankMode="letters",rankReq=0,rankNext=null;
-function rankHeaders(){return {apikey:RANK.key,Authorization:"Bearer "+RANK.key}}
+function rankHeaders(){return RANK.key.startsWith("eyJ")?{apikey:RANK.key,Authorization:"Bearer "+RANK.key}:{apikey:RANK.key}}
 async function loadRank(mode){rankMode=mode;document.querySelectorAll("#rankTabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.rm===mode)));
   const l=$("rankList"),info=$("rankInfo"),my=++rankReq;l.innerHTML="";info.textContent="Wczytuję…";
   try{const r=await fetch(RANK.url+"/rest/v1/scores?select=name,good,total,created_at&mode=eq."+mode+"&order=created_at.asc&limit=2000",{headers:rankHeaders()});
