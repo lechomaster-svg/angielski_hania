@@ -36,6 +36,8 @@ main{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;d
   border-left:2px solid var(--margin)}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 h1{font-family:var(--display);font-weight:600;font-size:1.6rem;margin:0;text-wrap:balance}
+.who{font:inherit;font-weight:700;font-size:.92rem;padding:6px 12px;border-radius:999px;border:1px solid var(--tile-edge);background:var(--tile);color:var(--ink);cursor:pointer}
+.who:hover{border-color:var(--accent)}
 .score{font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
 .score b{color:var(--ink)}
 .score .g{color:var(--ok)}.score .b{color:var(--bad)}
@@ -116,7 +118,7 @@ summary{cursor:pointer;font-weight:700}
 <main>
   <header>
     <h1>Brakujące literki</h1>
-    <div class="score" id="score"></div>
+    <button type="button" id="whoBtn" class="who" hidden></button>
   </header>
 
   <form class="card" id="nameBox" hidden>
@@ -197,7 +199,7 @@ summary{cursor:pointer;font-weight:700}
     <p class="hint">Słówka i wyniki zapisują się automatycznie.</p>
   </details>
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:30<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:35<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -406,10 +408,11 @@ $("addForm").addEventListener("submit",e=>{e.preventDefault();const en=$("addEn"
 $("expBtn").onclick=()=>{const t=S.words.map(w=>w[0]+" = "+w[1]).join("\n");const ta=$("expTxt");ta.value=t;ta.hidden=false;
   const done=()=>{$("expBtn").textContent="Skopiowano"};
   try{navigator.clipboard.writeText(t).then(done,()=>{ta.focus();ta.select();$("expBtn").textContent="Zaznacz i skopiuj tekst"})}catch(e){ta.focus();ta.select()}};
-function showName(){const has=!!S.name;$("nameBox").hidden=has;$("game").hidden=!has;if(!has){$("nameIn").value="";setTimeout(()=>$("nameIn").focus(),50)}}
+function showName(){const has=!!S.name;$("nameBox").hidden=has;$("game").hidden=!has;$("whoBtn").hidden=!has;if(has)$("whoBtn").textContent="👤 "+S.name+" · zmień";if(!has){$("nameIn").value="";setTimeout(()=>$("nameIn").focus(),50)}}
 $("nameBox").addEventListener("submit",e=>{e.preventDefault();const n=$("nameIn").value.trim();if(!n){$("nameIn").focus();return}
   S.name=n.charAt(0).toUpperCase()+n.slice(1);save();showName();resume()});
-$("nameChg").onclick=()=>{S.name="";save();showName()};
+function changeName(){S.name="";S.round=null;cur=null;save();showName()}
+$("nameChg").onclick=changeName;$("whoBtn").onclick=changeName;
 renderAll();showName();if(S.name)resume();
 </script>
 
