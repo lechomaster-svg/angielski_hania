@@ -77,6 +77,12 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 .sent{font-family:var(--display);font-weight:600;font-size:1.45rem;line-height:1.6;margin:0;text-wrap:balance}
 .gap{display:inline-block;min-width:2.6em;padding:0 8px;margin:0 3px;border-bottom:3px dashed var(--accent);color:var(--accent);text-align:center}
 .gap.ok{border-bottom-style:solid;border-color:var(--ok);color:var(--ok);background:var(--ok-soft);border-radius:6px 6px 0 0}
+.rank{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--paper);font-variant-numeric:tabular-nums}
+.rank li.me{outline:2px solid var(--accent)}
+.rank .pos{width:2em;text-align:center;font-weight:700}
+.rank .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:700}
+.rank .sc{color:var(--muted)}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px}
 .choices button.choice{font-family:var(--display);font-weight:600;font-size:1.15rem;padding:14px 10px;border:2px solid var(--tile-edge);background:var(--tile);color:var(--ink);border-radius:12px;min-width:0;overflow-wrap:anywhere}
 .choices button.choice:disabled{cursor:default}
@@ -160,7 +166,21 @@ summary{cursor:pointer;font-weight:700}
       <button class="main" id="repWrong">Powtórz złe słówka</button>
       <button id="newRound">Nowa runda (wszystkie)</button>
     </div>
+    <div class="row" id="rankSendRow" hidden><button id="rankSend">🏆 Dodaj wynik do rankingu</button></div>
+    <p class="hint" id="rankSendMsg" hidden></p>
   </section>
+
+  <details id="rankBox" hidden>
+    <summary>🏆 Ranking</summary>
+    <div class="modes" id="rankTabs" style="margin-top:12px">
+      <button type="button" data-rm="letters">Literki</button>
+      <button type="button" data-rm="choice">Wybierz</button>
+      <button type="button" data-rm="dict">Dyktando</button>
+      <button type="button" data-rm="sent">Zdania</button>
+    </div>
+    <ol class="rank" id="rankList"></ol>
+    <p class="hint" id="rankInfo"></p>
+  </details>
 
   <details id="edit">
     <summary>Lista słówek (<span id="cnt"></span>)</summary>
@@ -177,7 +197,7 @@ summary{cursor:pointer;font-weight:700}
     <p class="hint">Słówka i wyniki zapisują się automatycznie.</p>
   </details>
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:00<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:30<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -311,7 +331,10 @@ function showSummary(){const R=S.round;try{if(window.goatcounter&&goatcounter.co
     sp.textContent=(w[2]?picText(w[2])+"  ":"")+w[0]+" ";const sm=document.createElement("small");sm.textContent="– "+w[1];sp.appendChild(sm);r.appendChild(sp);l.appendChild(r)});
   $("repWrong").hidden=!wr.length;$("repWrong").textContent="Powtórz złe słówka ("+wr.length+")";
   $("sumCongrats").hidden=!!wr.length;
-  $("sumCongrats").textContent=R.repeat?"Wszystkie złe słówka poprawione, "+(S.name||"")+"!":"Cała runda bez błędu, "+(S.name||"")+"! Super!";}
+  $("sumCongrats").textContent=R.repeat?"Wszystkie złe słówka poprawione, "+(S.name||"")+"!":"Cała runda bez błędu, "+(S.name||"")+"! Super!";
+  const canRank=!!RANK.url&&!R.repeat&&R.total>=5;$("rankSendRow").hidden=!canRank||!!R.sent;$("rankSendMsg").hidden=!R.sent;
+  if(R.sent)$("rankSendMsg").textContent="Wynik jest już w rankingu.";
+  $("rankSend").disabled=false;$("rankSend").textContent="🏆 Dodaj wynik do rankingu";}
 $("repWrong").onclick=()=>{const k=S.round.kind||"words";const wr=S.round.wrong.map(findWord).filter(Boolean);startRound(wr,true,k)};
 $("newRound").onclick=()=>freshRound();
 function rstUI(ask){const r=$("rstRow");r.innerHTML="";
@@ -342,6 +365,35 @@ function renderList(){$("cnt").textContent=S.words.length;const l=$("list");l.in
 function renderModes(){if(!["letters","choice","dict","sent"].includes(S.mode))S.mode="letters";
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===S.mode)));$("levels").hidden=S.mode!=="letters"}
 document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>{const was=!!(S.round&&S.round.kind==="sent");S.mode=b.dataset.mode;save();renderModes();if(was!==(S.mode==="sent"))freshRound();else if(cur&&!checked)buildWord()});
+/* ---- shared online ranking (Supabase) ---- */
+const RANK={url:"",key:""};
+const RM_LABEL={letters:"Literki",choice:"Wybierz",dict:"Dyktando",sent:"Zdania"};
+let rankMode="letters",rankReq=0,rankNext=null;
+function rankHeaders(){return {apikey:RANK.key,Authorization:"Bearer "+RANK.key}}
+async function loadRank(mode){rankMode=mode;document.querySelectorAll("#rankTabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.rm===mode)));
+  const l=$("rankList"),info=$("rankInfo"),my=++rankReq;l.innerHTML="";info.textContent="Wczytuję…";
+  try{const r=await fetch(RANK.url+"/rest/v1/scores?select=name,good,total,created_at&mode=eq."+mode+"&order=created_at.asc&limit=2000",{headers:rankHeaders()});
+    if(!r.ok)throw new Error(r.status);const rows=await r.json();if(my!==rankReq)return;l.innerHTML="";const best={};
+    rows.forEach(x=>{const k=x.name.trim().toLowerCase();const pct=x.good/x.total;const b=best[k];
+      if(!b||pct>b.pct||(pct===b.pct&&x.total>b.total))best[k]={name:x.name.trim(),good:x.good,total:x.total,pct}});
+    const top=Object.values(best).sort((a,b)=>b.pct-a.pct||b.total-a.total).slice(0,10);
+    const medal=["🥇","🥈","🥉"];const me=(S.name||"").trim().toLowerCase();
+    top.forEach((x,i)=>{const li=document.createElement("li");if(x.name.toLowerCase()===me)li.className="me";
+      const a=document.createElement("span");a.className="pos";a.textContent=medal[i]||String(i+1);
+      const n=document.createElement("span");n.className="nm";n.textContent=x.name;
+      const sc=document.createElement("span");sc.className="sc";sc.textContent=x.good+"/"+x.total+" ("+Math.round(x.pct*100)+"%)";
+      li.append(a,n,sc);l.appendChild(li)});
+    info.textContent=top.length?"Liczy się najlepszy wynik każdej osoby w trybie „"+RM_LABEL[mode]+"”.":"Brak wyników w trybie „"+RM_LABEL[mode]+"”. Ukończ rundę i dodaj wynik jako pierwszy!"}
+  catch(e){if(my!==rankReq)return;info.textContent="Nie udało się wczytać rankingu. Sprawdź połączenie z internetem."}}
+async function sendRank(){const R=S.round;if(!R||R.sent||!RANK.url)return;const b=$("rankSend");b.disabled=true;b.textContent="Wysyłam…";
+  const mode=R.kind==="sent"?"sent":(S.mode==="sent"?"letters":S.mode);
+  try{const r=await fetch(RANK.url+"/rest/v1/scores",{method:"POST",headers:Object.assign({"Content-Type":"application/json",Prefer:"return=minimal"},rankHeaders()),
+      body:JSON.stringify({name:(S.name||"Gość").trim().slice(0,20),mode,good:R.good,total:R.total})});
+    if(!r.ok)throw new Error(r.status);R.sent=true;save();$("rankSendRow").hidden=true;const m=$("rankSendMsg");m.hidden=false;m.textContent="Dodano do rankingu! Zobacz niżej.";
+    const box=$("rankBox");if(box.open)loadRank(mode);else{rankNext=mode;box.open=true}}
+  catch(e){b.disabled=false;b.textContent="Nie udało się. Spróbuj ponownie"}}
+if(RANK.url){$("rankBox").hidden=false;$("rankBox").addEventListener("toggle",()=>{if($("rankBox").open){loadRank(rankNext||(S.mode in RM_LABEL?S.mode:"letters"));rankNext=null}});
+  document.querySelectorAll("#rankTabs button").forEach(b=>b.onclick=()=>loadRank(b.dataset.rm));$("rankSend").onclick=sendRank}
 function renderAll(){renderModes();renderScore();renderLevels();renderList()}
 
 $("checkBtn").onclick=check;$("nextBtn").onclick=skip;$("sayBtn").onclick=()=>cur&&say();
