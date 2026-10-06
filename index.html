@@ -184,22 +184,8 @@ summary{cursor:pointer;font-weight:700}
     <p class="hint" id="rankInfo"></p>
   </details>
 
-  <details id="edit">
-    <summary>Lista słówek (<span id="cnt"></span>)</summary>
-    <div class="list" id="list"></div>
-    <form class="add" id="addForm">
-      <input id="addEn" placeholder="po angielsku, np. tennis" autocapitalize="off" autocomplete="off" spellcheck="false">
-      <input id="addPl" placeholder="po polsku, np. tenis" autocomplete="off">
-      <input id="addPic" placeholder="obrazek 🎾" autocomplete="off" aria-label="Obrazek (emoji, opcjonalnie)">
-      <button class="main" type="submit">Dodaj</button>
-    </form>
-    <div class="row" style="justify-content:flex-start;margin-top:12px"><button type="button" id="expBtn">Skopiuj listę</button></div>
-    <textarea id="expTxt" readonly rows="6" hidden style="width:100%;margin-top:8px;font:inherit;font-size:.9rem;border-radius:8px;border:1px solid var(--tile-edge);background:var(--paper);color:var(--ink);padding:8px"></textarea>
-    <p class="hint" style="margin-bottom:0;display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="nameChg" style="padding:6px 12px;font-size:.9rem">Zmień imię</button></p>
-    <p class="hint">Słówka i wyniki zapisują się automatycznie.</p>
-  </details>
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:35<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 13:40<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -216,7 +202,7 @@ const PICTXT={"#vplay":"🏐","#bendl":"⬅️","#bendr":"➡️","#kick":"⚽",
 function picText(v){return v?(PICTXT[v]||v):""}
 const KEY="literki-v1";
 try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(d&&Array.isArray(d.words))S=Object.assign(S,d)}catch(e){}
-mergeDefaults();
+S.words=DEFAULT.map(w=>w.slice());
 
 let remote=null,tmr=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
@@ -357,13 +343,7 @@ function renderScore(){const R=S.round;if(!R){$("qpos").textContent="";$("qcnt")
   $("qcnt").innerHTML=`<span class="g">✓ ${R.good}</span> &nbsp; <span class="b">✗ ${R.bad}</span>`;
   $("prog").style.width=(R.total?done/R.total*100:0)+"%"}
 function renderLevels(){document.querySelectorAll(".levels button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.lv===S.lv)))}
-function renderList(){$("cnt").textContent=S.words.length;const l=$("list");l.innerHTML="";
-  S.words.forEach((w,i)=>{const r=document.createElement("div");r.className="item";
-    const sp=document.createElement("span");sp.textContent=(w[2]?picText(w[2])+"  ":"")+w[0]+" ";const sm=document.createElement("small");sm.textContent="– "+w[1];sp.appendChild(sm);
-    const b=document.createElement("button");b.type="button";b.textContent="Usuń";b.onclick=()=>{S.words.splice(i,1);
-      const R=S.round;if(R){if(R.queue.includes(w[0])){R.queue=R.queue.filter(n=>n!==w[0]);R.total--}else if(cur===w&&!checked){R.total--}}
-      save();renderList();if(cur===w){cur=null;if(S.round&&$("summary").hidden)nextWord()}else renderScore()};
-    r.append(sp,b);l.appendChild(r)})}
+function renderList(){}
 function renderModes(){if(!["letters","choice","dict","sent"].includes(S.mode))S.mode="letters";
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===S.mode)));$("levels").hidden=S.mode!=="letters"}
 document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>{const was=!!(S.round&&S.round.kind==="sent");S.mode=b.dataset.mode;save();renderModes();if(was!==(S.mode==="sent"))freshRound();else if(cur&&!checked)buildWord()});
@@ -400,19 +380,12 @@ function renderAll(){renderModes();renderScore();renderLevels();renderList()}
 
 $("checkBtn").onclick=check;$("nextBtn").onclick=skip;$("sayBtn").onclick=()=>cur&&say();
 document.querySelectorAll(".levels button").forEach(b=>b.onclick=()=>{S.lv=+b.dataset.lv;save();renderLevels();if(cur&&!checked)buildWord()});
-$("addForm").addEventListener("submit",e=>{e.preventDefault();const en=$("addEn").value.trim(),pl=$("addPl").value.trim(),pic=$("addPic").value.trim();
-  if(!en||!/[a-z]/i.test(en))return;const w=[en,pl||"?"];if(pic)w.push(pic);S.words.push(w);
-  if(S.round&&S.round.kind!=="sent"&&!S.round.repeat&&$("summary").hidden){S.round.queue.push(en);S.round.total++}
-  $("addEn").value="";$("addPl").value="";$("addPic").value="";save();renderList();renderScore();if(!cur&&$("summary").hidden)nextWord()});
 
-$("expBtn").onclick=()=>{const t=S.words.map(w=>w[0]+" = "+w[1]).join("\n");const ta=$("expTxt");ta.value=t;ta.hidden=false;
-  const done=()=>{$("expBtn").textContent="Skopiowano"};
-  try{navigator.clipboard.writeText(t).then(done,()=>{ta.focus();ta.select();$("expBtn").textContent="Zaznacz i skopiuj tekst"})}catch(e){ta.focus();ta.select()}};
 function showName(){const has=!!S.name;$("nameBox").hidden=has;$("game").hidden=!has;$("whoBtn").hidden=!has;if(has)$("whoBtn").textContent="👤 "+S.name+" · zmień";if(!has){$("nameIn").value="";setTimeout(()=>$("nameIn").focus(),50)}}
 $("nameBox").addEventListener("submit",e=>{e.preventDefault();const n=$("nameIn").value.trim();if(!n){$("nameIn").focus();return}
   S.name=n.charAt(0).toUpperCase()+n.slice(1);save();showName();resume()});
 function changeName(){S.name="";S.round=null;cur=null;save();showName()}
-$("nameChg").onclick=changeName;$("whoBtn").onclick=changeName;
+$("whoBtn").onclick=changeName;
 renderAll();showName();if(S.name)resume();
 </script>
 
