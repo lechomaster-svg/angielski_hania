@@ -89,6 +89,7 @@ summary{cursor:pointer;font-weight:700}
 @media (prefers-reduced-motion:no-preference){.pop{animation:pop .25s ease-out}@keyframes pop{50%{transform:scale(1.08)}}}
 </style>
 
+<script data-goatcounter="https://lechomaster.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
 <main>
@@ -155,7 +156,7 @@ summary{cursor:pointer;font-weight:700}
     <p class="hint">Słówka i wyniki zapisują się automatycznie.</p>
   </details>
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 11:20<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 6.10 · 12:30<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -241,7 +242,7 @@ function skip(){if(!cur||checked)return;checked=true;record(false);
   const m=$("msg");m.className="msg bad";m.textContent="Pominięte. Poprawnie:";showFix();
   $("checkBtn").textContent=S.round.queue.length?"Dalej":"Zobacz wynik";$("nextBtn").hidden=true}
 
-function showSummary(){const R=S.round;$("card").hidden=true;$("summary").hidden=false;renderScore();
+function showSummary(){const R=S.round;try{if(window.goatcounter&&goatcounter.count)goatcounter.count({path:R.repeat?"runda-powtorka-ukonczona":"runda-ukonczona",title:"Runda ukończona",event:true})}catch(e){}$("card").hidden=true;$("summary").hidden=false;renderScore();
   const pct=R.total?Math.round(R.good/R.total*100):0;
   $("sumBig").textContent=R.good+" / "+R.total;
   $("sumTitle").textContent=R.repeat?"Koniec powtórki złych słówek":"Koniec rundy";
