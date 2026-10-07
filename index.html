@@ -55,6 +55,7 @@ h1{font-family:var(--display);font-weight:600;font-size:1.6rem;margin:0;text-wra
 #sumList{width:100%;max-width:420px;text-align:left}
 .card{display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center;padding-block:8px}
 .pl{font-size:1.15rem;color:var(--muted);margin:0}
+.pl-say{padding:2px 8px;margin-left:4px;font-size:1rem;line-height:1.2;vertical-align:middle;border-color:var(--tile-edge)}
 .pl strong{color:var(--ink);background:linear-gradient(transparent 55%,var(--hl) 55%);padding:0 4px}
 .word{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;max-width:100%}
 @media (max-width:420px){.word{column-gap:20px}}
@@ -256,7 +257,8 @@ function buildWord(){checked=false;$("summary").hidden=true;$("card").hidden=fal
 function showHint(){if(PICS[cur[2]])$("pic").innerHTML=PICS[cur[2]];else $("pic").textContent=cur[2]||"";$("pic").hidden=!cur[2];
   $("pl").innerHTML=`Po polsku: <strong></strong>`;$("pl").querySelector("strong").textContent=cur[1]}
 function buildSentence(){const x=cur[3];hidden=[];$("pic").hidden=true;
-  $("pl").innerHTML=`Po polsku: <strong></strong>`;$("pl").querySelector("strong").textContent=x.pl;
+  $("pl").innerHTML=`Po polsku: <strong></strong> <button type="button" class="pl-say" aria-label="Przeczytaj po polsku">🔊</button>`;$("pl").querySelector("strong").textContent=x.pl;
+  $("pl").querySelector(".pl-say").onclick=()=>sayPl(x.pl);
   const st=document.createElement("p");st.className="sent";const parts=x.t.split("___");
   const gap=document.createElement("span");gap.className="gap";gap.id="gap";gap.textContent="?";st.append(parts[0],gap,parts[1]||"");
   const box=document.createElement("div");box.className="choices";
@@ -338,6 +340,8 @@ rstUI(false);
 
 function praise(){try{const u=new SpeechSynthesisUtterance("Brawo, "+(S.name||"")+"!");u.lang="pl-PL";u.pitch=1.5;u.rate=1.05;u.volume=1;
   const v=speechSynthesis.getVoices().find(x=>x.lang&&x.lang.toLowerCase().startsWith("pl"));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+function sayPl(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="pl-PL";u.rate=.9;
+  const v=speechSynthesis.getVoices().find(x=>x.lang&&x.lang.toLowerCase().startsWith("pl"));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 function say(){try{const u=new SpeechSynthesisUtterance(cur[0]);u.lang="en-GB";u.rate=.85;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 
 function renderScore(){const R=S.round;if(!R){$("qpos").textContent="";$("qcnt").textContent="";$("prog").style.width="0";return}
