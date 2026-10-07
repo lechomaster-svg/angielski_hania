@@ -73,7 +73,7 @@ button{font:inherit;font-weight:700;border-radius:10px;padding:11px 18px;cursor:
 button.main{background:var(--accent);color:var(--accent-ink)}
 button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 .levels{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-.modes-lbl{margin:0 0 -4px;text-align:center;font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.modes-lbl,.levels-lbl{margin:0 0 -4px;text-align:center;font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
 .modes{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .modes button{padding:7px 10px;font-size:.88rem;border-color:var(--tile-edge);color:var(--muted)}
 .modes button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
@@ -138,7 +138,8 @@ summary{cursor:pointer;font-weight:700}
     <button type="button" data-mode="dict">Dyktando</button>
     <button type="button" data-mode="sent">Zdania</button>
   </div>
-  <div class="levels" id="levels" role="group" aria-label="Poziom trudności">
+  <p class="levels-lbl" id="levelsLbl">Wybierz poziom trudności</p>
+  <div class="levels" id="levels" role="group" aria-labelledby="levelsLbl">
     <button id="lv1" data-lv="0.3">Łatwy</button>
     <button id="lv2" data-lv="0.5">Średni</button>
     <button id="lv3" data-lv="0.75">Trudny</button>
@@ -349,7 +350,7 @@ function renderScore(){const R=S.round;if(!R){$("qpos").textContent="";$("qcnt")
 function renderLevels(){document.querySelectorAll(".levels button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.lv===S.lv)))}
 function renderList(){}
 function renderModes(){if(!["letters","choice","dict","sent"].includes(S.mode))S.mode="letters";
-  document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===S.mode)));$("levels").hidden=S.mode!=="letters"}
+  document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===S.mode)));$("levels").hidden=$("levelsLbl").hidden=S.mode!=="letters"}
 document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>{const was=!!(S.round&&S.round.kind==="sent");S.mode=b.dataset.mode;save();renderModes();if(was!==(S.mode==="sent"))freshRound();else if(cur&&!checked)buildWord()});
 /* ---- shared online ranking (Supabase) ---- */
 const RANK={url:"https://gmrkbgttpmyutjetotqb.supabase.co",key:"sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc"};
