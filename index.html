@@ -259,6 +259,7 @@ function showHint(){if(PICS[cur[2]])$("pic").innerHTML=PICS[cur[2]];else $("pic"
 function buildSentence(){const x=cur[3];hidden=[];$("pic").hidden=true;
   $("pl").innerHTML=`Po polsku: <strong></strong> <button type="button" class="pl-say" aria-label="Przeczytaj po polsku">🔊</button>`;$("pl").querySelector("strong").textContent=x.pl;
   $("pl").querySelector(".pl-say").onclick=()=>sayPl(x.pl);
+  setTimeout(()=>{if(cur&&cur[3]===x&&!checked)sayPl(x.pl)},250);
   const st=document.createElement("p");st.className="sent";const parts=x.t.split("___");
   const gap=document.createElement("span");gap.className="gap";gap.id="gap";gap.textContent="?";st.append(parts[0],gap,parts[1]||"");
   const box=document.createElement("div");box.className="choices";
