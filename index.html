@@ -73,6 +73,7 @@ button{font:inherit;font-weight:700;border-radius:10px;padding:11px 18px;cursor:
 button.main{background:var(--accent);color:var(--accent-ink)}
 button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 .levels{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.modes-lbl{margin:0 0 -4px;text-align:center;font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
 .modes{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .modes button{padding:7px 10px;font-size:.88rem;border-color:var(--tile-edge);color:var(--muted)}
 .modes button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
@@ -130,7 +131,8 @@ summary{cursor:pointer;font-weight:700}
   <div id="game">
   <div class="status"><span id="qpos"></span><span id="qcnt"></span></div>
   <div class="bar" aria-hidden="true"><span id="prog"></span></div>
-  <div class="modes" role="group" aria-label="Rodzaj ćwiczenia">
+  <p class="modes-lbl" id="modesLbl">Wybierz rodzaj gry</p>
+  <div class="modes" role="group" aria-labelledby="modesLbl">
     <button type="button" data-mode="letters">Literki</button>
     <button type="button" data-mode="choice">Wybierz</button>
     <button type="button" data-mode="dict">Dyktando</button>
