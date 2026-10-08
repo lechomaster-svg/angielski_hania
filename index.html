@@ -36,6 +36,8 @@ main{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;d
   border-left:2px solid var(--margin)}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 a.back{font-weight:700;color:var(--accent);text-decoration:none;font-size:.95rem}
+.whorow{display:flex;justify-content:flex-end;margin-top:-12px}
+.whorow:has(#whoBtn[hidden]){display:none}
 h1{font-family:var(--display);font-weight:600;font-size:1.6rem;margin:0;text-wrap:balance}
 .who{font:inherit;font-weight:700;font-size:.92rem;padding:6px 12px;border-radius:999px;border:1px solid var(--tile-edge);background:var(--tile);color:var(--ink);cursor:pointer}
 .who:hover{border-color:var(--accent)}
@@ -120,9 +122,10 @@ summary{cursor:pointer;font-weight:700}
 <body>
 <main>
   <header>
+    <h1>🔤 Angielski</h1>
     <a class="back" href="/">← Menu</a>
-    <button type="button" id="whoBtn" class="who" hidden></button>
   </header>
+  <div class="whorow"><button type="button" id="whoBtn" class="who" hidden></button></div>
 
   <form class="card" id="nameBox" hidden>
     <p class="pl" style="color:var(--ink);font-size:1.3rem;font-family:var(--display)">Jak masz na imię?</p>
@@ -191,7 +194,7 @@ summary{cursor:pointer;font-weight:700}
   </details>
 
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 8.10 · 15:40<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 8.10 · 16:50<br>Marcin Lechowicz</p>
 </main>
 
 <script>
