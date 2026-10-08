@@ -194,7 +194,7 @@ summary{cursor:pointer;font-weight:700}
   </details>
 
   </div>
-  <p class="hint" style="text-align:center;margin:0">wersja 8.10 · 16:50<br>Marcin Lechowicz</p>
+  <p class="hint" style="text-align:center;margin:0">wersja 8.10 · 17:05<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -229,14 +229,16 @@ function sentItem(x){return [fullS(x),x.pl,"",x]}
 function findWord(en){if(S.round&&S.round.kind==="sent"){const x=SENT.find(q=>q.t===en);return x?sentItem(x):undefined}return S.words.find(w=>w[0]===en)}
 function freshRound(){if(S.mode==="sent")startRound(SENT.map(sentItem),false,"sent");else startRound(S.words,false,"words")}
 function startRound(list,repeat,kind){kind=kind||"words";const prev=S.round;const names=list.map(w=>w[3]?w[3].t:w[0]).filter(n=>kind==="sent"?SENT.some(q=>q.t===n):S.words.some(w=>w[0]===n));
-  S.round={kind,queue:shuffle(names),total:names.length,good:0,bad:0,wrong:[],cur:null,repeat:!!repeat,main:repeat&&prev?(prev.repeat?prev.main:{good:prev.good,total:prev.total}):null};save();renderScore();nextWord()}
+  S.round={kind,secs:0,queue:shuffle(names),total:names.length,good:0,bad:0,wrong:[],cur:null,repeat:!!repeat,main:repeat&&prev?(prev.repeat?prev.main:{good:prev.good,total:prev.total}):null};save();renderScore();nextWord()}
 function resume(){const R=S.round;if(!R||((R.kind==="sent")!==(S.mode==="sent"))){freshRound();return}
   if(R.cur&&findWord(R.cur)){cur=findWord(R.cur);buildWord()}else nextWord()}
 function nextWord(){const R=S.round;checked=false;
   while(R.queue.length&&!findWord(R.queue[0]))R.queue.shift();
   if(!R.queue.length){R.cur=null;cur=null;save();showSummary();return}
   R.cur=R.queue.shift();cur=findWord(R.cur);save();buildWord()}
-function buildWord(){checked=false;$("summary").hidden=true;$("card").hidden=false;$("msg").textContent="";$("msg").className="msg";$("fix").hidden=true;
+let qStart=0;
+function fmtTime(sec){const t=Math.round(sec);return t<60?t+" s":Math.floor(t/60)+" min "+(t%60)+" s"}
+function buildWord(){checked=false;qStart=Date.now();$("summary").hidden=true;$("card").hidden=false;$("msg").textContent="";$("msg").className="msg";$("fix").hidden=true;
   const w=$("word");w.innerHTML="";renderScore();
   if(!cur){$("pl").textContent="Dodaj słówka do listy poniżej.";$("pic").textContent="";return}
   $("checkBtn").hidden=false;$("checkBtn").textContent="Sprawdź";$("nextBtn").hidden=false;$("sayBtn").hidden=S.mode!=="dict";$("rankNowBtn").hidden=true;
@@ -297,7 +299,7 @@ $("word").addEventListener("keydown",e=>{const t=e.target;if(t.tagName!=="INPUT"
   if(e.key==="Backspace"&&!t.value){const a=inputs();const k=a.indexOf(t);if(a[k-1]){a[k-1].focus();a[k-1].value=""}e.preventDefault()}
   if(e.key==="Enter"){e.preventDefault();check()}});
 
-function record(ok){const R=S.round;if(ok)R.good++;else{R.bad++;const k=cur[3]?cur[3].t:cur[0];if(!R.wrong.includes(k))R.wrong.push(k)}save();renderScore()}
+function record(ok){const R=S.round;if(qStart){R.secs=(R.secs||0)+Math.min(120,(Date.now()-qStart)/1000);qStart=0}if(ok)R.good++;else{R.bad++;const k=cur[3]?cur[3].t:cur[0];if(!R.wrong.includes(k))R.wrong.push(k)}save();renderScore()}
 function showFix(){const f=$("fix");f.innerHTML="";const tx=document.createElement("p");tx.className="fixtxt";tx.textContent=cur[0];f.appendChild(tx);if(S.mode==="choice"||cur[3]){f.hidden=false;return}const lab=document.createElement("span");lab.className="fixlab";lab.textContent="Poprawnie:";f.appendChild(lab);
   const box=document.createElement("div");box.className="word";let part=null;
   [...cur[0]].forEach((c,i)=>{if(c===" "||!part){part=document.createElement("div");part.className="part";box.appendChild(part);if(c===" ")return}
@@ -323,7 +325,7 @@ function showSummary(){const R=S.round;try{if(window.goatcounter&&goatcounter.co
   const pct=R.total?Math.round(R.good/R.total*100):0;
   $("sumBig").textContent=R.good+" / "+R.total;
   $("sumTitle").textContent=R.repeat?"Koniec powtórki złych słówek":"Koniec rundy";
-  $("sumTxt").textContent="dobrze "+R.good+", źle "+R.bad+" ("+pct+"%)"+(R.repeat&&R.main?" · cała runda: "+R.main.good+" / "+R.main.total:"");
+  $("sumTxt").textContent="dobrze "+R.good+", źle "+R.bad+" ("+pct+"%)"+(R.secs?" · czas: "+fmtTime(R.secs):"")+(R.repeat&&R.main?" · cała runda: "+R.main.good+" / "+R.main.total:"");
   const l=$("sumList");l.innerHTML="";
   const wr=R.wrong.map(findWord).filter(Boolean);
   $("sumWrongHead").hidden=!wr.length;
@@ -368,23 +370,25 @@ let rankMode="letters",rankReq=0,rankNext=null;
 function rankHeaders(){return RANK.key.startsWith("eyJ")?{apikey:RANK.key,Authorization:"Bearer "+RANK.key}:{apikey:RANK.key}}
 async function loadRank(mode){rankMode=mode;document.querySelectorAll("#rankTabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.rm===mode)));
   const l=$("rankList"),info=$("rankInfo"),my=++rankReq;l.innerHTML="";info.textContent="Wczytuję…";
-  try{const r=await fetch(RANK.url+"/rest/v1/scores?select=name,good,total,created_at&mode=eq."+mode+"&order=created_at.asc&limit=2000",{headers:rankHeaders()});
+  try{const q=c=>fetch(RANK.url+"/rest/v1/scores?select="+c+"&mode=eq."+mode+"&order=created_at.asc&limit=2000",{headers:rankHeaders()});
+    let r=await q("name,good,total,seconds,created_at");if(r.status===400)r=await q("name,good,total,created_at");
     if(!r.ok)throw new Error(r.status);const rows=await r.json();if(my!==rankReq)return;l.innerHTML="";const best={};
-    rows.forEach(x=>{const k=x.name.trim().toLowerCase();const pct=x.good/x.total;const b=best[k];
-      if(!b||pct>b.pct||(pct===b.pct&&x.total>b.total))best[k]={name:x.name.trim(),good:x.good,total:x.total,pct}});
-    const top=Object.values(best).sort((a,b)=>b.pct-a.pct||b.total-a.total).slice(0,10);
+    rows.forEach(x=>{const k=x.name.trim().toLowerCase();const pct=x.good/x.total;const sec=x.seconds>0?+x.seconds:Infinity;const b=best[k];
+      if(!b||pct>b.pct||(pct===b.pct&&(x.total>b.total||(x.total===b.total&&sec<b.sec))))best[k]={name:x.name.trim(),good:x.good,total:x.total,pct,sec}});
+    const top=Object.values(best).sort((a,b)=>b.pct-a.pct||b.total-a.total||(a.sec-b.sec)||0).slice(0,10);
     const medal=["🥇","🥈","🥉"];const me=(S.name||"").trim().toLowerCase();
-    let place=0;top.forEach((x,i)=>{if(i===0||x.pct!==top[i-1].pct||x.total!==top[i-1].total)place=i+1;const li=document.createElement("li");if(x.name.toLowerCase()===me)li.className="me";
+    let place=0;top.forEach((x,i)=>{if(i===0||x.pct!==top[i-1].pct||x.total!==top[i-1].total||Math.round(x.sec)!==Math.round(top[i-1].sec))place=i+1;const li=document.createElement("li");if(x.name.toLowerCase()===me)li.className="me";
       const a=document.createElement("span");a.className="pos";a.textContent=medal[place-1]||String(place);
       const n=document.createElement("span");n.className="nm";n.textContent=x.name;
-      const sc=document.createElement("span");sc.className="sc";sc.textContent=x.good+"/"+x.total+" ("+Math.round(x.pct*100)+"%)";
+      const sc=document.createElement("span");sc.className="sc";sc.textContent=x.good+"/"+x.total+" ("+Math.round(x.pct*100)+"%)"+(isFinite(x.sec)?" · "+fmtTime(x.sec):"");
       li.append(a,n,sc);l.appendChild(li)});
-    info.textContent=top.length?"Liczy się najlepszy wynik każdej osoby w trybie „"+RM_LABEL[mode]+"”.":"Brak wyników w trybie „"+RM_LABEL[mode]+"”. Ukończ rundę i dodaj wynik jako pierwszy!"}
+    info.textContent=top.length?"Liczy się najlepszy wynik każdej osoby w trybie „"+RM_LABEL[mode]+"”: najpierw punkty, przy remisie krótszy czas.":"Brak wyników w trybie „"+RM_LABEL[mode]+"”. Ukończ rundę i dodaj wynik jako pierwszy!"}
   catch(e){if(my!==rankReq)return;info.textContent="Nie udało się wczytać rankingu. Sprawdź połączenie z internetem."}}
 async function sendRank(){const R=S.round;if(!R||R.sent||!RANK.url)return;const b=$("rankSend");b.disabled=true;b.textContent="Wysyłam…";
   const mode=R.kind==="sent"?"sent":(S.mode==="sent"?"letters":S.mode);
-  try{const r=await fetch(RANK.url+"/rest/v1/scores",{method:"POST",headers:Object.assign({"Content-Type":"application/json",Prefer:"return=minimal"},rankHeaders()),
-      body:JSON.stringify({name:(S.name||"Gość").trim().slice(0,20),mode,good:R.good,total:R.total})});
+  try{const base={name:(S.name||"Gość").trim().slice(0,20),mode,good:R.good,total:R.total};
+    const post=d=>fetch(RANK.url+"/rest/v1/scores",{method:"POST",headers:Object.assign({"Content-Type":"application/json",Prefer:"return=minimal"},rankHeaders()),body:JSON.stringify(d)});
+    let r=await post(Object.assign({seconds:Math.max(1,Math.round((R.secs||0)*10)/10)},base));if(r.status===400)r=await post(base);
     if(!r.ok)throw new Error(r.status);R.sent=true;save();$("rankSendRow").hidden=true;const m=$("rankSendMsg");m.hidden=false;m.textContent="Dodano do rankingu! Zobacz niżej.";
     const box=$("rankBox");if(box.open)loadRank(mode);else{rankNext=mode;box.open=true}}
   catch(e){b.disabled=false;b.textContent="Nie udało się. Spróbuj ponownie"}}
